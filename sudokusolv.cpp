@@ -29,35 +29,21 @@ static void print(const Field g)
 	printf("+----------+-----------+----------+\n");
 }
 
-static void swap(Field & g, int x, int y)
-{
-	Element tmp = g[x][y];
-	g[x][y] = g[y][x];
-	g[y][x] = tmp;
-}
-
-static void transpose(Field & g)
-{
-	for (int y = 0; y < N; ++y)
-		for (int x = 0; x < N; ++x)
-			swap(g, x, y);
-}
-
-static bool row_contains(const Field g, int row, int ignore_col, Element e)
+static bool row_contains(const Field & g, int row, int ignore_col, Element e)
 {
 	for (int col = 0; col < N; ++col)
 		if ((col != ignore_col) && (g[row][col] == e)) return true;
 	return false;
 }
 
-static bool col_contains(const Field g, int ignore_row, int col, Element e)
+static bool col_contains(const Field & g, int ignore_row, int col, Element e)
 {
 	for (int row = 0; row < N; ++row)
 		if ((row != ignore_row) && (g[row][col] == e)) return true;
 	return false;
 }
 
-static bool sub_contains(const Field g, int row, int col, Element e)
+static bool sub_contains(const Field & g, int row, int col, Element e)
 {
 	int sx = col - (col % NS);
 	int sy = row - (row % NS);
@@ -74,28 +60,31 @@ static bool sub_contains(const Field g, int row, int col, Element e)
 	return false;
 }
 
-static bool check(const Field f)
+static bool check_element(const Field & f, int row, int col, Element e)
+{
+	if (col_contains(f, row, col, e)) return false;
+	if (row_contains(f, row, col, e)) return false;
+	if (sub_contains(f, row, col, e)) return false;
+	return true;
+}
+
+static bool check(const Field & f)
 {
 	for (int row = 0; row < N; ++row) {
 		for (int col = 0; col < N; ++col) {
 			if (f[row][col] == 0) continue;
-			if (col_contains(f, row, col, f[row][col])) return false;
-			if (row_contains(f, row, col, f[row][col])) return false;
-			if (sub_contains(f, row, col, f[row][col])) return false;
+			if (!check_element(f, row, col, f[row][col])) return false;
 		}
 	}
 	return true;
 }
 
-static void randomize(Element e[], size_t n)
+static void random_elements(Element e[], size_t n)
 {
-	srand(time(0)); // seed
-
-	size_t a;
-	size_t b;
-	for (size_t i = 100 + (rand() % 500); i; --i) {
-		a = rand() % n;
-		b = rand() % n;
+	for (size_t i = 0; i < n; ++i) e[i] = i + 1;
+	for (size_t i = 10 + (rand() % 50); i; --i) {
+		size_t a = rand() % n;
+		size_t b = rand() % n;
 		Element tmp = e[a];
 		e[a] = e[b];
 		e[b] = tmp;
@@ -109,33 +98,29 @@ static bool solve(Field & g)
 
 			if (g[y][x] != 0) continue; // already occupied?
 
-			// prepare elements
+			// prepare elements, randomization is used to
+			// find solutions for arbitrarily defined
+			// fields (even empty ones)
 			Element e[N];
-			Element elem = 1;
-			for (size_t i = 0; i < N; ++i, ++elem) e[i] = elem;
-			randomize(e, N);
+			random_elements(e, N);
 
 			// try elements
 			bool solution = false;
 			for (size_t i = 0; !solution && (i < N); ++i) {
 				g[y][x] = e[i];
 
-				// check
-				if (   row_contains(g, y, x, e[i])
-				    || col_contains(g, y, x, e[i])
-				    || sub_contains(g, y, x, e[i])
-				    ) {
-					solution = false;
-				} else {
-					// if not found, search deeper
+				if (check_element(g, y, x, e[i])) {
+					// element not found, solution might be good, search deeper
 					solution = solve(g);
+				} else {
+					solution = false;
 				}
 			}
 
-			// check for (sub)solution
+			// restore state, try another solution
 			if (!solution) {
-				g[y][x] = 0; // then restore
-				return false; // still found!
+				g[y][x] = 0;
+				return false;
 			}
 		}
 	}
@@ -144,6 +129,8 @@ static bool solve(Field & g)
 
 int main(int, char **)
 {
+	srand(time(0));
+
 	Field f = {
 		{ 0, 5, 7, 9, 0, 8, 6, 1, 0 },
 		{ 0, 0, 0, 0, 0, 7, 0, 9, 4 },
@@ -155,8 +142,6 @@ int main(int, char **)
 		{ 0, 8, 4, 0, 0, 0, 1, 0, 0 },
 		{ 1, 0, 0, 4, 0, 9, 0, 0, 0 },
 	};
-
-	transpose(f); // needed because of the human readable initialization
 
 	if (!check(f)) {
 		printf("Error in entry field. exit.\n");
