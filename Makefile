@@ -1,7 +1,7 @@
 # Makefile
 
-#CXXFLAGS+=-Wall -ansi -pedantic -ggdb -O2 -fomit-frame-pointer -funroll-loops
-CXXFLAGS+=-Wall -Wextra -ansi -pedantic -ggdb
+CXXFLAGS+=-Wall -Wextra -ansi -pedantic -ggdb -O2 -fomit-frame-pointer -funroll-loops
+#CXXFLAGS+=-Wall -Wextra -ansi -pedantic -ggdb
 
 .PHONY: all
 all: sudokusolv solver

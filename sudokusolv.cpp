@@ -1,11 +1,10 @@
-// sudokusolve.cpp
+// sudokusolv.cpp
 //
 // Mario Konrad
 // 2006-05-30
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
+#include <cstdio>
+#include <cstdlib>
 #include <time.h>
 
 enum { NS = 3, N = NS*NS };
@@ -13,7 +12,7 @@ enum { NS = 3, N = NS*NS };
 typedef int Element;
 typedef Element Field[N][N];
 
-static void print(const Field g)
+static void print(const Field & g)
 {
 	printf("+-----------+-----------+---------+\n");
 	for (int y = 0; y < N; ++y) {
@@ -68,7 +67,7 @@ static bool check_element(const Field & f, int row, int col, Element e)
 	return true;
 }
 
-static bool check(const Field & f)
+static bool check_field(const Field & f)
 {
 	for (int row = 0; row < N; ++row) {
 		for (int col = 0; col < N; ++col) {
@@ -82,7 +81,10 @@ static bool check(const Field & f)
 static void random_elements(Element e[], size_t n)
 {
 	for (size_t i = 0; i < n; ++i) e[i] = i + 1;
-	for (size_t i = 10 + (rand() % 50); i; --i) {
+
+	// loop with enough entropy to generate new possible solutions
+	// for cells, maybe use of std::next_permutation would be better...
+	for (size_t i = (n * 2) + (rand() % (n * 5)); i; --i) {
 		size_t a = rand() % n;
 		size_t b = rand() % n;
 		Element tmp = e[a];
@@ -117,7 +119,7 @@ static bool solve(Field & g)
 				}
 			}
 
-			// restore state, try another solution
+			// backtracking: restore state, try another solution
 			if (!solution) {
 				g[y][x] = 0;
 				return false;
@@ -143,8 +145,8 @@ int main(int, char **)
 		{ 1, 0, 0, 4, 0, 9, 0, 0, 0 },
 	};
 
-	if (!check(f)) {
-		printf("Error in entry field. exit.\n");
+	if (!check_field(f)) {
+		printf("Error in input field. exit.\n");
 		return -1;
 	}
 
